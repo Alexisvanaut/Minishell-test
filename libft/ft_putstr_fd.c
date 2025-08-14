@@ -1,13 +1,17 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ast.c                                              :+:      :+:    :+:   */
+/*   ft_putstr_fd.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
+/*   By: lucorrei <lucorrei@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/08/04 11:04:16 by alvanaut          #+#    #+#             */
-/*   Updated: 2025/08/05 13:11:33 by alvanaut         ###   ########.fr       */
+/*   Created: 2025/04/15 14:50:34 by lucorrei          #+#    #+#             */
+/*   Updated: 2025/04/15 15:11:18 by lucorrei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+#include "libft.h"
 
-#include "../minishell.h"
+void	ft_putstr_fd(char *s, int fd)
+{
+	(void)! write(fd, s, ft_strlen(s));
+}

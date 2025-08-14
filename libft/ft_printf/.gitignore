@@ -1,0 +1,7 @@
+*.o
+*.a
+*.out
+temp*
+test*
+.*.sw*
+*.*.gch
