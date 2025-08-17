@@ -1,6 +1,6 @@
 #include "../minishell.h"
 
-static char *read_line(void)
+char *read_line(void)
 {
 	char *line;
 
@@ -8,56 +8,67 @@ static char *read_line(void)
 	if (!line)
 		return (NULL);
 	if (ft_strcmp(line, "exit") == 0)
-		return (free(line), NULL);
+		return (rl_free_line_state(), rl_clear_history(), free(line), NULL);
 	add_history(line);
 	return (line);
 }
 
-static char *handle_separator(char *line, int *i)
+static t_lexeme handle_separator(char *line, int *i)
 {
+	t_lexeme lex;
+
+	lex = (t_lexeme){NULL, Q_NONE};
 	if (!line)
-		return (NULL);
+		return (lex);
 	if (ft_strncmp(line, "||", 2) == 0)
-		return (*i += 2, ft_substr(line, 0, 2));
+		return (*i += 2, lex.value = ft_substr(line, 0, 2), lex);
 	if (ft_strncmp(line, "|", 1) == 0)
-		return (*i += 1, ft_substr(line, 0, 1));
+		return (*i += 1, lex.value = ft_substr(line, 0, 1), lex);
 	if (ft_strncmp(line, "&&", 2) == 0)
-		return (*i += 2, ft_substr(line, 0, 2));
+		return (*i += 2, lex.value = ft_substr(line, 0, 2), lex);
 	if (ft_strncmp(line, "&", 1) == 0)
-		return (*i += 1, ft_substr(line, 0, 1));
+		return (*i += 1, lex.value = ft_substr(line, 0, 1), lex);
 	if (ft_strncmp(line, ">>", 2) == 0)
-		return (*i += 2, ft_substr(line, 0, 2));
+		return (*i += 2, lex.value = ft_substr(line, 0, 2), lex);
 	if (ft_strncmp(line, ">", 1) == 0)
-		return (*i += 1, ft_substr(line, 0, 1));
+		return (*i += 1, lex.value = ft_substr(line, 0, 1), lex);
 	if (ft_strncmp(line, "<<", 2) == 0)
-		return (*i += 2, ft_substr(line, 0, 2));
+		return (*i += 2, lex.value = ft_substr(line, 0, 2), lex);
 	if (ft_strncmp(line, "<", 1) == 0)
-		return (*i += 1, ft_substr(line, 0, 1));
+		return (*i += 1, lex.value = ft_substr(line, 0, 1), lex);
 	if (ft_strncmp(line, "(", 1) == 0)
-		return (*i += 1, ft_substr(line, 0, 1));
+		return (*i += 1, lex.value = ft_substr(line, 0, 1), lex);
 	if (ft_strncmp(line, ")", 1) == 0)
-		return (*i += 1, ft_substr(line, 0, 1));
+		return (*i += 1, lex.value = ft_substr(line, 0, 1), lex);
 	if (ft_strncmp(line, ";", 1) == 0)
-		return (*i += 1, ft_substr(line, 0, 1));
-	return (NULL);
+		return (*i += 1, lex.value = ft_substr(line, 0, 1), lex);
+	return (lex);
 }
 
-static char	*handle_quote(char *line, int *i)
+static t_lexeme handle_quote(char *line, int *i)
 {
+	t_lexeme lex;
 	char quote;
-	int	index;
+	int index;
 
+	lex = (t_lexeme){NULL, Q_NONE};
 	if (!line)
-		return (NULL);
+		return (lex);
 	quote = line[0];
-	if (quote != '\'' && quote != '"')
-		  return (NULL);
 	index = 1;
+	if (quote != '\'' && quote != '"')
+		return (lex);
 	while (line[index] && line[index] != quote)
 		index++;
 	if (!line[index])
-		return (printf("Syntax error: unclosed quote\n"), NULL);
-	return (*i += index + 1, ft_substr(line, 1,  index - 1));
+		return (printf("Syntax error: Unclosed quote\n"), lex);
+	lex.value = ft_substr(line, 1, index - 1);
+	if (quote == '\'')
+		lex.quote = Q_SIMPLE;
+	else
+		lex.quote = Q_DOUBLE;
+	*i += index + 1;
+	return (lex);
 }
 
 static int		is_separator(char *line)
@@ -76,20 +87,20 @@ static int		is_separator(char *line)
 	return (0);
 }
 
-static char	*handle_word(char *line, int *i)
+static t_lexeme handle_word(char *line, int *i)
 {
 	int index;
+	t_lexeme lex;
 
+	lex = (t_lexeme){NULL, Q_NONE};
 	index = 0;
-	while (line[index] && !is_separator(&line[index]))
+	while (line[index] && !is_separator(&line[index]) && line[index] != ' ')
 	{
 		if (line[index] == '\\' && line[index + 1])
 	  		index++;
 		index++;
 	}
-	if (!line[index])
-		return (*i += index, ft_substr(line, 0, index));
-	return (*i += index, ft_substr(line, 0, index - 1));
+	return (*i += index, lex.value = ft_substr(line, 0, index), lex);
 }
 
 void	skip_spaces(char *line, int *i)
@@ -98,104 +109,104 @@ void	skip_spaces(char *line, int *i)
 		(*i)++;
 }
 
-char	**add_token(char **tokens, char *token)
+t_lexeme *add_lexeme(t_lexeme *lexeme, t_lexeme lex, int count)
 {
-	int count;
-	char **new_tokens;
+	t_lexeme *new_lexeme;
 	int i;
 
-	count = 0;
-	if (!token)
-		return (NULL);
-	if (tokens)
-	{
-		while (tokens[count])
-			count++;
-	}
-	new_tokens = malloc(sizeof(char *) * (count + 2));
-	if (!new_tokens)
-		return (NULL);
 	i = 0;
+	new_lexeme = malloc(sizeof(t_lexeme) * (count + 2));
+	if (!new_lexeme)
+		return (NULL);
 	while (i < count)
 	{
-		new_tokens[i] = tokens[i];
+		new_lexeme[i] = lexeme[i];
 		i++;
 	}
-	new_tokens[count] = ft_strdup(token);
-	new_tokens[count + 1] = NULL;
-	free(tokens);
-	return (new_tokens);
+	new_lexeme[count] = lex;
+	new_lexeme[count + 1] = (t_lexeme){NULL, Q_NONE};
+	free(lexeme);
+	return (new_lexeme);
 }
 
-char **lexer(char *line)
+void	free_lexemes(t_lexeme *lex)
 {
-	char *token;
-	char **tokens = NULL;
 	int i;
 
+	if (!lex)
+		return ;
 	i = 0;
+	while (lex[i].value)
+	{
+		free(lex[i].value);
+		i++;
+	}
+	free(lex);
+}
+
+t_lexeme *lexer(char *line)
+{
+	t_lexeme lex;
+	t_lexeme *lexeme = NULL;
+	int i;
+	int count;
+
+	i = 0;
+	count = 0;
 	while (line[i])
 	{
 		skip_spaces(line, &i);
 		if (!line[i])
 			break ;
 		if (is_separator(&line[i]) == 1)
-			token = handle_separator(&line[i], &i);
+			lex = handle_separator(&line[i], &i);
 		else if (is_separator(&line[i]) == 2)
-			token = handle_quote(&line[i], &i);
+			lex = handle_quote(&line[i], &i);
 		else
-			token = handle_word(&line[i], &i);
-		add_token(tokens, token);
-		free(token);
+			lex = handle_word(&line[i], &i);
+		if (lex.value)
+		{
+			lexeme = add_lexeme(lexeme, lex, count);
+			count++;
+		}
 	}
-	return (tokens);
+	return (lexeme);
 }
-
 
 //int main(void)
 //{
-//	char *line;
-//    char **tokens = NULL;
-//    char *token;
+//    char *line;
+//    t_lexeme *lexemes;
 //    int i;
 //
-//    while ((line = read_line()))
+//    while (1)
 //    {
-//        i = 0;
-//        tokens = NULL;
+//        line = read_line(); // suppose que read_line renvoie une ligne allouée
+//        if (!line)
+//            break ; // Ctrl+D ou erreur
 //
-//        while (line[i])
-//        {
-//            skip_spaces(line, &i);
-//            if (!line[i])
-//                break;
-//
-//            if (is_separator(&line[i]) == 1)
-//                token = handle_separator(&line[i], &i);
-//            else if (is_separator(&line[i]) == 2)
-//                token = handle_quote(&line[i], &i);
-//            else
-//                token = handle_word(&line[i], &i);
-//
-//            tokens = add_token(tokens, token);
-//            free(token);
-//        }
-//
-//        // Afficher les tokens
-//        printf("=== TOKENS ===\n");
-//        for (int j = 0; tokens && tokens[j]; j++)
-//            printf("[%s]\n", tokens[j]);
-//
-//        // Libérer les tokens
-//        if (tokens)
-//        {
-//            for (int j = 0; tokens[j]; j++)
-//                free(tokens[j]);
-//            free(tokens);
-//        }
+//        lexemes = lexer(line);
 //        free(line);
+//
+//        if (!lexemes)
+//            continue ;
+//
+//        i = 0;
+//        while (lexemes[i].value)
+//        {
+//            printf("Lexeme[%d]: \"%s\" Quote: %d\n", i, lexemes[i].value, lexemes[i].quote);
+//            free(lexemes[i].value);
+//            i++;
+//        }
+//        free(lexemes);
 //    }
 //
 //    return 0;
 //}
+
+
+
+
+
+
 

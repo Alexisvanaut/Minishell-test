@@ -56,10 +56,24 @@ typedef enum e_token_type
 	T_QUOTE
 }					t_token_type;
 
+typedef enum e_quote_type
+{
+	Q_NONE,
+	Q_SIMPLE,
+	Q_DOUBLE
+}		t_quote_type;	
+
+typedef struct s_lexeme
+{
+	char *value;
+	t_quote_type quote;
+}	t_lexeme;
+
 typedef struct s_token
 {
 	char			*value;
 	t_token_type	type;
+	t_quote_type	quote;
 	struct s_token	*next;
 }					t_token;
 
@@ -90,6 +104,27 @@ typedef struct s_ast
 
 /*---lexer---*/
 
+t_lexeme *lexer(char *line);
+void	free_lexemes(t_lexeme *lex);
+char *read_line(void);
+/*---token--*/
+
+t_token *init_token(const char *line, t_token_type type, t_quote_type quote);
+void free_token(t_token *token);
+t_token *lexer_to_token(t_lexeme *lex);
+
+/*---ast + utils---*/
+
+void	free_ast(t_ast *ast);
+void	free_cmd(t_command *cmd);
+t_command *init_cmd(char *path, char **args);
+int	count_args(char **args);
+t_ast *init_ast(t_node_type type, t_command *command, char *filename, int fd_in, int fd_out);
+
+
+/*---envp---*/
+
+char *envp(char *key, char **envp);
 
 
 #endif // MINISHELL_H
