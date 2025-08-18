@@ -173,36 +173,36 @@ t_lexeme *lexer(char *line)
 	return (lexeme);
 }
 
-//int main(void)
-//{
-//    char *line;
-//    t_lexeme *lexemes;
-//    int i;
+// int main(void)
+// {
+//     char *line;
+//     t_lexeme *lexemes;
+//     int i;
 //
-//    while (1)
-//    {
-//        line = read_line(); // suppose que read_line renvoie une ligne allouée
-//        if (!line)
-//            break ; // Ctrl+D ou erreur
+//     while (1)
+//     {
+//         line = read_line(); // suppose que read_line renvoie une ligne allouée
+//         if (!line)
+//             break ; // Ctrl+D ou erreur
 //
-//        lexemes = lexer(line);
-//        free(line);
+//         lexemes = lexer(line);
+//         free(line);
 //
-//        if (!lexemes)
-//            continue ;
+//         if (!lexemes)
+//             continue ;
 //
-//        i = 0;
-//        while (lexemes[i].value)
-//        {
-//            printf("Lexeme[%d]: \"%s\" Quote: %d\n", i, lexemes[i].value, lexemes[i].quote);
-//            free(lexemes[i].value);
-//            i++;
-//        }
-//        free(lexemes);
-//    }
+//         i = 0;
+//         while (lexemes[i].value)
+//         {
+//             printf("Lexeme[%d]: \"%s\" Quote: %d\n", i, lexemes[i].value, lexemes[i].quote);
+//             free(lexemes[i].value);
+//             i++;
+//         }
+//         free(lexemes);
+//     }
 //
-//    return 0;
-//}
+//     return 0;
+// }
 
 
 

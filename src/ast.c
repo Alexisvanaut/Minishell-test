@@ -6,11 +6,15 @@ void	free_cmd(t_command *cmd)
 	
 	if (!cmd)
 		return ;
-	i = 0;
-	while (cmd->args[i])
+	if (cmd->args)
 	{
-		free(cmd->args[i]);
-		i++;
+		i = 0;
+		while (cmd->args[i])
+		{
+			free(cmd->args[i]);
+			i++;
+		}
+		free(cmd->args);
 	}
 	if (cmd->path)
 		free(cmd->path);
@@ -29,40 +33,46 @@ int		count_args(char **args)
 	return (i);
 }
 
-
 t_command *init_cmd(char *path, char **args)
 {
-	t_command *cmd;
-	int i;
+    t_command *cmd;
+    int i;
 
-	cmd = malloc(sizeof(t_command));
-	if (!cmd)
-		return (NULL);
-	cmd->path = ft_strdup(path);
-	if (!cmd->path)
-		return (free_cmd(cmd), NULL);
-	i = 0;
-	cmd->args = malloc(sizeof(char *) * (count_args(args) + 1));
-	if (!cmd->args)
-		return (NULL);
-	while (args[i])
-	{
-		cmd->args[i] = ft_strdup(args[i]);
-		if (!cmd->args[i])
-			return (free_cmd(cmd), NULL);
-		i++;
-	}
-	cmd->args[i] = NULL;
-	return (cmd);
+    cmd = malloc(sizeof(t_command));
+    if (!cmd)
+        return (NULL);
+    cmd->path = path ? ft_strdup(path) : NULL;
+    if (path && !cmd->path)
+        return (free_cmd(cmd), NULL);
+    if (!args)
+    {
+        cmd->args = malloc(sizeof(char *));
+        if (!cmd->args)
+            return (free_cmd(cmd), NULL);
+        cmd->args[0] = NULL;
+        return (cmd);
+    }
+    cmd->args = malloc(sizeof(char *) * (count_args(args) + 1));
+    if (!cmd->args)
+        return (free_cmd(cmd), NULL);
+    i = 0;
+    while (args[i])
+    {
+        cmd->args[i] = ft_strdup(args[i]);
+        if (!cmd->args[i])
+            return (free_cmd(cmd), NULL);
+        i++;
+    }
+    cmd->args[i] = NULL;
+    return (cmd);
 }
-
 
 
 t_ast *init_ast(t_node_type type, t_command *command, char *filename, int fd_in, int fd_out)
 {
 	t_ast *ast;
 
-	ast = malloc(sizeof(t_ast));
+	ast = malloc(sizeof(t_ast));	
 	if (!ast)
 		return (NULL);
 	ast->command = command;
@@ -78,21 +88,19 @@ t_ast *init_ast(t_node_type type, t_command *command, char *filename, int fd_in,
 	ast->type = type;
 	ast->left = NULL;
 	ast->right = NULL;
-	return (ast);
+return (ast);
 }
+
 
 void	free_ast(t_ast *ast)
 {
 	if (!ast)
 		return ;
-	if (ast->command)
-		free_cmd(ast->command);
-	if (ast->filename)
-		free(ast->filename);
-	if (ast->left)
-		free_ast(ast->left);
-	if (ast->right)
-		free_ast(ast->right);
+	free_cmd(ast->command);
+	free(ast->filename);
+	free_ast(ast->left);
+	free_ast(ast->right);
+	free(ast);
 }
 
 // Changer les tokens en ast
@@ -141,8 +149,45 @@ t_node_type token_to_node_type(t_token *token)
 		return (NODE_CMD);
 }
 
+// transform token to cmd for bultins
 
+t_command *token_to_cmd(t_token *token)
+{
+    t_command *cmd;
+    int count;
+    int i;
+    t_token *tmp;
 
+    if (!token)
+        return (NULL);
+    count = 0;
+    tmp = token;
+    while (tmp && token_to_node_type(tmp) == NODE_CMD)
+    {
+        count++;
+        tmp = tmp->next;
+    }
+    cmd = malloc(sizeof(t_command));
+    if (!cmd)
+        return (NULL);
+    cmd->args = malloc(sizeof(char *) * (count + 1));
+    if (!cmd->args)
+        return (free(cmd), NULL);
+    i = 0;
+    while (token && token_to_node_type(token) == NODE_CMD)
+    {
+        cmd->args[i] = ft_strdup(token->value);
+        if (!cmd->args[i])
+            return (free_cmd(cmd), NULL);
+        i++;
+        token = token->next;
+    }
+    cmd->args[i] = NULL;
+    cmd->path = ft_strdup(cmd->args[0]);
+    if (!cmd->path)
+        return (free_cmd(cmd), NULL);
+    return (cmd);
+}
 
 
 
